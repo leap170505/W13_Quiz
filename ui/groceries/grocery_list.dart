@@ -3,6 +3,8 @@ import '../../data/mock_grocery_repository.dart';
 import '../../models/grocery.dart';
 import 'grocery_form.dart';
 
+enum GroceryTab { groceriesTab, searchTab }
+
 class GroceryList extends StatefulWidget {
   const GroceryList({super.key});
 
@@ -11,6 +13,8 @@ class GroceryList extends StatefulWidget {
 }
 
 class _GroceryListState extends State<GroceryList> {
+  List<Grocery> groceries = dummyGroceryItems;
+  GroceryTab _currentTab = GroceryTab.groceriesTab;
 
   void onCreate() async {
     // Navigate to the form screen using the Navigator push
@@ -25,16 +29,24 @@ class _GroceryListState extends State<GroceryList> {
     }
   }
 
+  void handleSearch(String value) {
+    setState(() {
+      groceries = dummyGroceryItems.where((grocery) {
+        return grocery.name.toLowerCase().startsWith(value.toLowerCase());
+      }).toList();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     Widget content = const Center(child: Text('No items added yet.'));
 
-    if (dummyGroceryItems.isNotEmpty) {
+    if (groceries.isNotEmpty) {
       //  Display groceries with an Item builder and  LIst Tile
       content = ListView.builder(
-        itemCount: dummyGroceryItems.length,
+        itemCount: groceries.length,
         itemBuilder: (context, index) =>
-            GroceryTile(grocery: dummyGroceryItems[index]),
+            GroceryTile(grocery: groceries[index]),
       );
     }
 
@@ -43,7 +55,36 @@ class _GroceryListState extends State<GroceryList> {
         title: const Text('Your Groceries'),
         actions: [IconButton(onPressed: onCreate, icon: const Icon(Icons.add))],
       ),
-      body: content,
+      body: IndexedStack(
+        index: _currentTab.index,
+        children: [
+          content,
+          Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.all(16),
+                child: TextField(
+                  onChanged: handleSearch,
+                ), 
+              ),           
+              Expanded(child: content)
+            ],
+          )
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        selectedItemColor: Colors.blue[200],
+        currentIndex: _currentTab.index,
+        onTap: (index) {
+          setState(() {
+            _currentTab = GroceryTab.values[index];
+          });
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.local_grocery_store), label: 'Groceries'),
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
+        ],
+      ),
     );
   }
 }
